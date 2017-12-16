@@ -1,0 +1,19 @@
+{
+  "name": "photo_service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "startdb": "mongod --dbpath ./database/data",
+    "seed": "node ./database/seed.js",
+    "clear": "node ./database/clear.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.2",
+    "fs": "0.0.1-security",
+    "mongoose": "^4.13.7"
+  }
+}
