@@ -4,12 +4,12 @@ const moment = require('moment');
 const cassandra = require('cassandra-driver');
 const async = require('async');
 const elasticsearch = require('elasticsearch');
-
+const axios = require('axios');
 
 let cassandraClient = new cassandra.Client({contactPoints: ['127.0.0.1']});
 let elasticClient = new elasticsearch.Client({host: 'localhost:9200',log: 'trace'});
-
-  
+cassandraClient.options.socketOptions.readTimeout = 300000;
+console.log ('Socket Options :', cassandraClient.options.socketOptions);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
 
 //ELASTIC SEARCH
 elasticClient.ping({
@@ -22,70 +22,30 @@ elasticClient.ping({
         console.log('All is well');
       }
       });
-  
-  // elasticClient.search({
-  //     q: 'int'
-  //     }).then(function (body) {
-  //     var hits = body.hits.total;
-  //     console.log(hits);
-  //     }, function (error) {
-  //     console.trace(error.message);
-  //     });
-// let createcassandraelasticClient = () => {
-//     var cassandraelasticClient = new cassandra.cassandraelasticClient({contactPoints: ['127.0.0.1'], keyspace: 'events'});
-// }
+
 
 
 
 
 let config = {
-    headers: {"Content-Type": "application/x-ndjson"}
+    // headers: {"Content-Type": "application/x-ndjson"}
+    headers: {"Content-Type": "application/json"}
+    
 };
 
-let seededAlready = false;
-// let toCount = 0;
-// let createESTO = (arr) => {
-    //     console.log('in the createESTO function');
-    //     arr.forEach((event) => {
-        //         // console.log('in the createESTO for each');
-//         let curCreate = { "create" : { "_index" : "events2", "_type" : "event_fired2" , "_id":event.id} };
-//         let curEvent = { "id" : event.id, "listing_id": event.listing_id, "time": event.time , "type": event.type, "metadata": event.metadata.photo };
-//         elasticSearchQueue.push(curCreate);
-//         elasticSearchQueue.push(curEvent);
-//     })
-//     // elasticSearchQueue += JSON.stringify(curCreate) + '\n' + JSON.stringify(curEvent) + '\n';
-//     // elasticSearchQueue += `{ "create" : { "_index" : "events", "_type" : "event_fired"} }\n{ "id" : ${event.id}, "listing_id":${event.listing_id}, "time":${event.time} , "type":${event.type}, "metadata":${event.metadata.photo} }\n`
-//     if (elasticSearchQueue.length === 500) {
-    //         let bulkPost = {body: elasticSearchQueue};
-    //         // axios.post('http://localhost:9200/events/event_fired/_bulk', bulkPost, config);
-//         // setTimeout(() =>{
-    //         return new Promise((resolve,reject) => {elasticClient.bulk(bulkPost, (err,resp) => {
-        //             if(err){return console.log('Error Seeding ES Bulk Batch :', err)}
-        //             // console.log('Bulk Response :', resp);
-        //             console.log('in the createESTO seed PROMISE');
-        //             resolve();
-        //         });
-        //         elasticSearchQueue = [];
-        //     });
-        //         // }, 1000 * toCount)
-        //         // toCount ++;
-        //     }
-        //     // setTimeout(() => {
-            //     //     axios.post(`http://localhost:9200/events/event_fired/${event.id}`,{
-                //     //         id: event.id,
-                //     //         listing_id: event.listing_id,
-                //     //         time: event.time,
-                //     //         type: event.type,
-//     //         metadata: event.metadata.photo
-//     //     }, config
-//     //     ).then(() => {
-    //     //         console.log('i in nested setTimeout', i);
-//     //     }).catch((err) =>{
-    //     //         console.log('ERROR SEEDING ELASTIC SEARCH :', err);
-//     //     })
-//     // }, 20 * i);
-// }
-
+let ratioCount = 10;
+let insertIntoElastic = (ratio) => {
+    ratioCount++;  
+    return elasticClient.index({
+        index: 'event_service',
+        // id: String(ratioCount),
+        type: 'ratios',
+        body: {
+            "Ratio": ratio,
+            "Time": new Date(),
+        }
+    })    
+};
 
 //CASSANDRA
 let createKeyspace = () => {
@@ -139,51 +99,61 @@ let describeKeyspaces = () => {
 }
 
 let seedBatchCassandra = (arr) => {
-    console.log('in the seed batch cassandra function');
+    // console.log('in the seed batch cassandra function');
     return cassandraClient.batch(arr, {prepare:true});
 }
 
+let getCassandraCountInt = () => {
+    return cassandraClient.execute("SELECT count(*) FROM events.events WHERE metadata = 'int' ALLOW FILTERING;", [], {autopage:true})
+};
+let getCassandraCountExt = () => {
+    return cassandraClient.execute("SELECT count(*) FROM events.events WHERE metadata = 'ext' ALLOW FILTERING;")    
+};
 let esQueue = [];
 let seedBatchElastic = (arr) => {
     console.log('in the seed batch elastic function');
-    // return new Promise((resolve,reject) => {
-        //     createESTO(arr).then(() => {
-            //         resolve();
-    //     })
-    // })
-    // return createESTO(arr);
+
     esQueue = [];
     console.log('arr.length in seedBatchElastic', arr.length)
-    // console.log('in the createESTO function');
     arr.forEach((event) => {
-        // console.log('in the createESTO for each');
         let curCreate = { "create" : { "_index" : "events2", "_type" : "event_fired2" , "_id":event.id} };
         let curEvent = { "id" : event.id, "listing_id": event.listing_id, "time": event.time , "type": event.type, "metadata": event.metadata.photo };
         esQueue.push(curCreate);
         esQueue.push(curEvent);
     })
-    // elasticSearchQueue += JSON.stringify(curCreate) + '\n' + JSON.stringify(curEvent) + '\n';
-    // elasticSearchQueue += `{ "create" : { "_index" : "events", "_type" : "event_fired"} }\n{ "id" : ${event.id}, "listing_id":${event.listing_id}, "time":${event.time} , "type":${event.type}, "metadata":${event.metadata.photo} }\n`
     console.log('elastic queue', esQueue);
     console.log('elastic queue length', esQueue.length);
     
     if (esQueue.length === 1000) {
         let bulkPost = {body: esQueue};
-        // axios.post('http://localhost:9200/events/event_fired/_bulk', bulkPost, config);
-        // setTimeout(() =>{
-        // return new Promise((resolve,reject) => {elasticClient.bulk(bulkPost, (err,resp) => {
-        //     if(err){return console.log('Error Seeding ES Bulk Batch :', err)}
-        //     // console.log('Bulk Response :', resp);
-        //     console.log('in the createESTO seed PROMISE');
-        //     resolve();
-        // });
         return elasticClient.bulk(bulkPost);
-    // });
-    
-        // }, 1000 * toCount)
-        // toCount ++;
+
     }
     
+}
+
+let SelectAllEvents = () => {
+    new Promise((resolve,reject) => {
+        resolve(cassandraClient.execute("SELECT * FROM events.events;"));
+    }).then((data) =>{
+        console.log(data);
+    })
+}
+
+module.exports = {
+    // InsertEvent:InsertEvent,
+    // createcassandraClient,createcassandraClient,
+    elasticClient:elasticClient,
+    insertIntoElastic:insertIntoElastic,
+    getCassandraCountExt:getCassandraCountExt,
+    getCassandraCountInt:getCassandraCountInt,
+    seedBatchElastic:seedBatchElastic,
+    seedBatchCassandra:seedBatchCassandra,
+    createKeyspace:createKeyspace,
+    createTable:createTable,
+    insertEvent:insertEvent,
+    SelectAllEvents:SelectAllEvents,
+    describeKeyspaces,describeKeyspaces
 }
 // let InsertEvent = (id,time,type,metadata) => {
 //     return new Promise((resolve, reject) => {new Promise ((resolve,reject) => {
@@ -216,26 +186,6 @@ let seedBatchElastic = (arr) => {
 //     resolve();
 // })
 // }
-
-let SelectAllEvents = () => {
-    new Promise((resolve,reject) => {
-        resolve(cassandraClient.execute("SELECT * FROM events.events;"));
-    }).then((data) =>{
-        console.log(data);
-    })
-}
-
-module.exports = {
-    // InsertEvent:InsertEvent,
-    // createcassandraClient,createcassandraClient,
-    seedBatchElastic:seedBatchElastic,
-    seedBatchCassandra:seedBatchCassandra,
-    createKeyspace:createKeyspace,
-    createTable:createTable,
-    insertEvent:insertEvent,
-    SelectAllEvents:SelectAllEvents,
-    describeKeyspaces,describeKeyspaces
-}
 // mongoose.connect('mongodb://localhost/test');
 // "use strict";
 // var db = mongoose.connection;

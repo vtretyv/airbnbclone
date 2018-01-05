@@ -41,6 +41,7 @@
     "css-loader": "^0.28.7",
     "csv-write-stream": "^2.0.0",
     "d3": "^4.12.0",
+    "elastic-apm-node": "^0.9.0",
     "elasticsearch": "^14.0.0",
     "eslint": "^4.11.0",
     "eslint-config-airbnb": "^16.1.0",

@@ -1,0 +1,18 @@
+ERRORS:
+
+ERROR SEEDING BATCH TO CASSANDRA:  { Error: write EPIPE
+    at _errnoException (util.js:1024:11)
+    at WriteWrap.afterWrite [as oncomplete] (net.js:867:14)
+  code: 'EPIPE',
+  errno: 'EPIPE',
+  syscall: 'write',
+  isSocketError: true }
+
+ERROR SEEDING BATCH TO CASSANDRA:  { [Error: All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Host considered as DOWN. See innerErrors.]
+innerErrors: { '127.0.0.1:9042': 'Host considered as DOWN' },
+info: 'Represents an error when a query cannot be performed because no host is available or could be reached by the driver.',
+message: 'All host(s) tried for query failed. First host tried, 127.0.0.1:9042: Host considered as DOWN. See innerErrors.' }
+
+Potential Solution:
+Spin up cassandra on a different instance. Each server instance will then communicate to the cassandra instance.
+if the cassandra instance is still too taxed, spin up additional cassandra instances as nodes in a cluster.
